@@ -314,9 +314,9 @@ PYBIND11_MODULE(pixelengine, m)
         else if (mode == "w")
             open_mode = std::ios::out | std::ios::binary;
         else
-            throw std::invalid_argument("mode needs to be either 'r' or 'w'");
+            throw py::value_error("mode needs to be either 'r' or 'w'");
         if (!(container_name == "" || container_name == "ficom" || container_name == "caching-ficom"))
-            throw std::invalid_argument("invalid container: " + container_name);
+            throw py::value_error("invalid container: " + container_name);
         return self.open(url, container_name, open_mode, cache_name); },
             py::arg("url"),
             py::arg("container_name") = "",
