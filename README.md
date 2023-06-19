@@ -7,7 +7,7 @@ Python bindings for the [Philips Pathology SDK](https://www.openpathology.philip
 Requirements
 ------------
 
-* Philips Pathology SDK 2.0-L1
+* Philips Pathology SDK >= 2.0
 
 
 Installation

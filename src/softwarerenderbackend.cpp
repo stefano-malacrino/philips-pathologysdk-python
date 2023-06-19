@@ -1,6 +1,5 @@
 #include <pybind11/pybind11.h>
 
-#include <PhilipsPixelEngine/renderbackend.hpp>
 #include <PhilipsPixelEngine/softwarerenderbackend.hpp>
 
 namespace py = pybind11;
