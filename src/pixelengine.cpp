@@ -7,7 +7,20 @@
 #include <PhilipsPixelEngine/renderbackend.hpp>
 #include <PhilipsPixelEngine/rendercontext.hpp>
 
+#include "pystreambuf.h"
+
 namespace py = pybind11;
+
+std::ios_base::openmode parse_isyntax_open_options(std::string open_mode, std::string container_name) {
+    if (!(container_name == "" || container_name == "ficom" || container_name == "caching-ficom"))
+            throw py::value_error("invalid container: " + container_name);
+    if (open_mode == "r")
+        return std::ios::in | std::ios::binary;
+    else if (open_mode == "w")
+        return std::ios::out | std::ios::binary;
+    else
+        throw py::value_error("mode needs to be either 'r' or 'w'");
+}
 
 PYBIND11_MODULE(pixelengine, m)
 {
@@ -263,17 +276,18 @@ PYBIND11_MODULE(pixelengine, m)
         .def(
             "open", [](PixelEngine::ISyntaxFacade &self, std::string const &url, std::string const &container_name, std::string mode, std::string const &cache_name)
             {
-        std::ios_base::openmode open_mode;
-        if (mode == "r")
-            open_mode = std::ios::in | std::ios::binary;
-        else if (mode == "w")
-            open_mode = std::ios::out | std::ios::binary;
-        else
-            throw py::value_error("mode needs to be either 'r' or 'w'");
-        if (!(container_name == "" || container_name == "ficom" || container_name == "caching-ficom"))
-            throw py::value_error("invalid container: " + container_name);
+        std::ios_base::openmode open_mode = parse_isyntax_open_options(mode, container_name);
         return self.open(url, container_name, open_mode, cache_name); },
             py::arg("url"),
+            py::arg("container_name") = "",
+            py::arg("mode") = "r",
+            py::arg("cache_name") = "")
+        .def(
+            "open", [](PixelEngine::ISyntaxFacade &self, std::istream& stream, std::string const &container_name, std::string mode, std::string const &cache_name)
+            {
+        std::ios_base::openmode open_mode = parse_isyntax_open_options(mode, container_name);
+        return self.open(static_cast<std::iostream*>(&stream), container_name, open_mode, cache_name); },
+            py::arg("stream"),
             py::arg("container_name") = "",
             py::arg("mode") = "r",
             py::arg("cache_name") = "")
