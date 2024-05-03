@@ -160,7 +160,66 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property_readonly("pixel_size", [](PixelEngine::View &self)
                                { return self.pixelSize(); });
 
-    py::class_<PixelEngine::SourceView, PixelEngine::View>(pyPixelEngine, "SourceView", py::multiple_inheritance())
+    py::class_<PixelEngine::SourceView>(pyPixelEngine, "SourceView")
+        .def(
+            "__getitem__", [](PixelEngine::SourceView &self, size_t level)
+            { return &self[level]; },
+            py::return_value_policy::reference)
+        .def("chain_source_view", [](PixelEngine::SourceView &self, const PixelEngine::View &view, int x_shift, int y_shift, int level_shift)
+             { return self.chainSourceView(view, x_shift, y_shift, level_shift); })
+        .def(
+            "request_regions", [](PixelEngine::SourceView &self, std::vector<std::vector<size_t>> const &regions, bool enable_async_rendering, std::vector<size_t> const &background_color, PixelEngine::BufferType buffer_type)
+            { return self.requestRegions(regions, enable_async_rendering, background_color, buffer_type); },
+            py::arg("regions"),
+            py::arg("enable_async_rendering") = true,
+            py::arg("background_color") = std::vector<size_t>({0, 0, 0}),
+            py::arg("buffer_type") = PixelEngine::BufferType::RGB,
+            py::return_value_policy::reference)
+        .def(
+            "request_regions", [](PixelEngine::SourceView &self, std::vector<std::vector<size_t>> const &regions, PixelEngine::DataEnvelopes const &data_envelopes, bool enable_async_rendering, std::vector<size_t> const &background_color, PixelEngine::BufferType buffer_type)
+            { return self.requestRegions(regions, data_envelopes, enable_async_rendering, background_color, buffer_type); },
+            py::arg("regions"),
+            py::arg("data_envelopes"),
+            py::arg("enable_async_rendering") = true,
+            py::arg("background_color") = std::vector<size_t>({0, 0, 0}),
+            py::arg("buffer_type") = PixelEngine::BufferType::RGB,
+            py::return_value_policy::reference)
+        .def("dimension_ranges", [](PixelEngine::SourceView &self, size_t level)
+             { return self.dimensionRanges(level); })
+        .def_property_readonly("dimension_names", [](PixelEngine::SourceView &self)
+                               { return self.dimensionNames(); })
+        .def_property_readonly("dimension_units", [](PixelEngine::SourceView &self)
+                               { return self.dimensionUnits(); })
+        .def_property_readonly("dimension_types", [](PixelEngine::SourceView &self)
+                               { return self.dimensionTypes(); })
+        .def_property_readonly("dimension_discrete_values", [](PixelEngine::SourceView &self)
+                               { return self.dimensionDiscreteValues(); })
+        .def_property_readonly("scale", [](PixelEngine::SourceView &self)
+                               { return self.scale(); })
+        .def_property_readonly("origin", [](PixelEngine::SourceView &self)
+                               { return self.origin(); })
+        .def(
+            "data_envelopes", [](PixelEngine::SourceView &self, size_t level)
+            { return &self.dataEnvelopes(level); },
+            py::return_value_policy::reference)
+        .def_property_readonly("bits_allocated", [](PixelEngine::SourceView &self)
+                               { return self.bitsAllocated(); })
+        .def_property_readonly("bits_stored", [](PixelEngine::SourceView &self)
+                               { return self.bitsStored(); })
+        .def_property_readonly("high_bit", [](PixelEngine::SourceView &self)
+                               { return self.highBit(); })
+        .def_property_readonly("pixel_representation", [](PixelEngine::SourceView &self)
+                               { return self.pixelRepresentation(); })
+        .def_property_readonly("planar_configuration", [](PixelEngine::SourceView &self)
+                               { return self.planarConfiguration(); })
+        .def_property_readonly("samples_per_pixel", [](PixelEngine::SourceView &self)
+                               { return self.samplesPerPixel(); })
+        .def_property_readonly("id", [](PixelEngine::SourceView &self)
+                               { return self.id(); })
+        .def_property_readonly("num_derived_levels", [](PixelEngine::SourceView &self)
+                               { return self.numDerivedLevels(); })
+        .def_property_readonly("pixel_size", [](PixelEngine::SourceView &self)
+                               { return self.pixelSize(); })
         .def("load_default_parameters", &PixelEngine::SourceView::loadDefaultParameters)
         .def("truncation", &PixelEngine::SourceView::truncation);
 
