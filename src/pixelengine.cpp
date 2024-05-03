@@ -11,7 +11,7 @@
 
 namespace py = pybind11;
 
-std::ios_base::openmode parse_isyntax_open_options(std::string open_mode, std::string container_name) {
+std::ios_base::openmode parse_isyntax_open_options(std::string const &open_mode, std::string const &container_name) {
     if (!(container_name == "" || container_name == "ficom" || container_name == "caching-ficom"))
             throw py::value_error("invalid container: " + container_name);
     if (open_mode == "r")
@@ -101,8 +101,8 @@ PYBIND11_MODULE(pixelengine, m)
 
     py::class_<PixelEngine::View>(pyPixelEngine, "View")
         .def(
-            "__getitem__", [](PixelEngine::View &self, size_t level) -> PixelEngine::Level const &
-            { return self[level]; },
+            "__getitem__", [](PixelEngine::View &self, size_t level)
+            { return &self[level]; },
             py::return_value_policy::reference)
         .def("chain_source_view", [](PixelEngine::View &self, const PixelEngine::View &view, int x_shift, int y_shift, int level_shift)
              { return self.chainSourceView(view, x_shift, y_shift, level_shift); })
@@ -138,8 +138,8 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property_readonly("origin", [](PixelEngine::View &self)
                                { return self.origin(); })
         .def(
-            "data_envelopes", [](PixelEngine::View &self, size_t level) -> PixelEngine::DataEnvelopes const &
-            { return self.dataEnvelopes(level); },
+            "data_envelopes", [](PixelEngine::View &self, size_t level)
+            { return &self.dataEnvelopes(level); },
             py::return_value_policy::reference)
         .def_property_readonly("bits_allocated", [](PixelEngine::View &self)
                                { return self.bitsAllocated(); })
@@ -264,12 +264,12 @@ PYBIND11_MODULE(pixelengine, m)
                 return self.putBlock(info.ptr, info.itemsize * info.size); })*/
         .def_property_readonly("has_display_view", &PixelEngine::SubImage::hasDisplayView)
         .def_property_readonly(
-            "source_view", [](PixelEngine::SubImage &self) -> PixelEngine::SourceView const &
-            { return self.sourceView(); },
+            "source_view", [](PixelEngine::SubImage &self)
+            { return &self.sourceView(); },
             py::return_value_policy::reference)
         .def_property_readonly(
-            "display_view", [](PixelEngine::SubImage &self) -> PixelEngine::DisplayView const &
-            { return self.displayView(); },
+            "display_view", [](PixelEngine::SubImage &self)
+            { return &self.displayView(); },
             py::return_value_policy::reference)
         .def("add_view", &PixelEngine::SubImage::addView)
         .def(
@@ -333,7 +333,7 @@ PYBIND11_MODULE(pixelengine, m)
 
     py::class_<PixelEngine::ISyntaxFacade>(pyPixelEngine, "ISyntaxFacade")
         .def(
-            "open", [](PixelEngine::ISyntaxFacade &self, std::string const &url, std::string const &container_name, std::string mode, std::string const &cache_name)
+            "open", [](PixelEngine::ISyntaxFacade &self, std::string const &url, std::string const &container_name, std::string const &mode, std::string const &cache_name)
             {
         std::ios_base::openmode open_mode = parse_isyntax_open_options(mode, container_name);
         return self.open(url, container_name, open_mode, cache_name); },
@@ -353,12 +353,12 @@ PYBIND11_MODULE(pixelengine, m)
         .def("add_sub_image", &PixelEngine::ISyntaxFacade::addSubImage)
         .def_property_readonly("num_images", &PixelEngine::ISyntaxFacade::numImages)
         .def(
-            "__getitem__", [](PixelEngine::ISyntaxFacade &self, size_t index) -> PixelEngine::SubImage const &
-            { return self[index]; },
+            "__getitem__", [](PixelEngine::ISyntaxFacade &self, size_t index)
+            { return &self[index]; },
             py::return_value_policy::reference)
         .def(
-            "__getitem__", [](PixelEngine::ISyntaxFacade &self, std::string const &type) -> PixelEngine::SubImage const &
-            { return self[type]; },
+            "__getitem__", [](PixelEngine::ISyntaxFacade &self, std::string const &type)
+            { return &self[type]; },
             py::return_value_policy::reference)
         .def("finalize_geometry_and_properties", &PixelEngine::ISyntaxFacade::finalizeGeometryAndProperties)
         .def_property_readonly("isyntax_file_version", &PixelEngine::ISyntaxFacade::iSyntaxFileVersion)
@@ -448,8 +448,8 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property_readonly_static("version", [](py::object)
                                       { return PixelEngine::version(); })
         .def(
-            "__getitem__", [](PixelEngine &self, std::string const &name) -> PixelEngine::ISyntaxFacade &
-            { return self[name]; },
+            "__getitem__", [](PixelEngine &self, std::string const &name)
+            { return &self[name]; },
             py::return_value_policy::reference)
         .def("containers", &PixelEngine::containers)
         .def("container_version", &PixelEngine::containerVersion)
