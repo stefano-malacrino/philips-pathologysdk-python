@@ -70,26 +70,26 @@ PYBIND11_MODULE(pixelengine, m)
         .def("build", &PixelEngine::SecondaryCaptureCompressionParametersBuilder::build);
 
     py::class_<PixelEngine::DataEnvelopes>(pyPixelEngine, "DataEnvelopes")
-        .def("__eq__", [](PixelEngine::DataEnvelopes &self, PixelEngine::DataEnvelopes &other)
+        .def("__eq__", [](PixelEngine::DataEnvelopes &self, PixelEngine::DataEnvelopes const &other)
              { return self == other; })
         .def("as_extreme_vertices_model", &PixelEngine::DataEnvelopes::asEVM)
         .def("as_rectangles", &PixelEngine::DataEnvelopes::asRectangles);
 
     py::class_<PixelEngine::Region, std::shared_ptr<PixelEngine::Region>>(pyPixelEngine, "Region")
         .def("__hash__", &PixelEngine::Region::id)
-        .def("__eq__", [](PixelEngine::Region &self, PixelEngine::Region &other)
+        .def("__eq__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
              { return self.id() == other.id(); })
-        .def("__ge__", [](PixelEngine::Region &self, PixelEngine::Region &other)
+        .def("__ge__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
              { return self.id() >= other.id(); })
-        .def("__gt__", [](PixelEngine::Region &self, PixelEngine::Region &other)
+        .def("__gt__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
              { return self.id() > other.id(); })
-        .def("__le__", [](PixelEngine::Region &self, PixelEngine::Region &other)
+        .def("__le__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
              { return self.id() <= other.id(); })
-        .def("__lt__", [](PixelEngine::Region &self, PixelEngine::Region &other)
+        .def("__lt__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
              { return self.id() < other.id(); })
         .def_property_readonly("ready", &PixelEngine::Region::ready)
         .def_property_readonly("range", &PixelEngine::Region::range)
-        .def("get", [](PixelEngine::Region &self, py::buffer buffer)
+        .def("get", [](PixelEngine::Region &self, py::buffer const &buffer)
              {
             py::buffer_info info = buffer.request();
             return self.get(info.ptr, info.itemsize * info.size); })
@@ -258,7 +258,7 @@ PYBIND11_MODULE(pixelengine, m)
     py::class_<PixelEngine::SubImage>(pyPixelEngine, "SubImage")
         .def("include_input_region", &PixelEngine::SubImage::includeInputRegion)
         .def("preallocate_pixels", &PixelEngine::SubImage::preallocatePixels)
-        /*.def("put_block", [](PixelEngine::SubImage &self, py::buffer buffer)
+        /*.def("put_block", [](PixelEngine::SubImage &self, py::buffer const &buffer)
              { 
                 py::buffer_info info = buffer.request();
                 return self.putBlock(info.ptr, info.itemsize * info.size); })*/
@@ -277,7 +277,7 @@ PYBIND11_MODULE(pixelengine, m)
             { return self.blockSize(template_id); },
             py::arg("template_id") = 0UL)
         .def("block_pos", &PixelEngine::SubImage::blockPos)
-        .def("read_block", [](PixelEngine::SubImage &self, py::buffer buffer)
+        .def("read_block", [](PixelEngine::SubImage &self, py::buffer const &buffer)
              { 
                 py::buffer_info info = buffer.request();
                 return self.readBlock(info.ptr, info.itemsize * info.size); })
@@ -341,7 +341,7 @@ PYBIND11_MODULE(pixelengine, m)
             py::arg("mode") = "r",
             py::arg("cache_name") = "")
         .def(
-            "open", [](PixelEngine::ISyntaxFacade &self, std::istream& stream, std::string const &container_name, std::string mode, std::string const &cache_name)
+            "open", [](PixelEngine::ISyntaxFacade &self, std::istream& stream, std::string const &container_name, std::string const &mode, std::string const &cache_name)
             {
         std::ios_base::openmode open_mode = parse_isyntax_open_options(mode, container_name);
         return self.open(static_cast<std::iostream*>(&stream), container_name, open_mode, cache_name); },
