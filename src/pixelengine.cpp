@@ -298,14 +298,13 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property(
             "image_data", [](PixelEngine::SubImage &self)
             {
-        std::vector<uint8_t> data = self.imageData();
-        return py::memoryview(py::bytes((char *)data.data(), data.size())); },
-            [](PixelEngine::SubImage &self, py::buffer data)
+        std::vector<uint8_t> const &data = self.imageData();
+        return py::memoryview::from_memory((void*) data.data(), data.size(), true);},
+            [](PixelEngine::SubImage &self, py::buffer const &data)
             {
         py::buffer_info info = data.request();
         std::vector<uint8_t> values((uint8_t *)info.ptr, ((uint8_t *)info.ptr) + info.itemsize * info.size);
-        return self.imageData(values); },
-            py::return_value_policy::take_ownership)
+        return self.imageData(values); })
         .def_property(
             "lossy_image_compression", [](PixelEngine::SubImage &self)
             { return self.lossyImageCompression(); },
