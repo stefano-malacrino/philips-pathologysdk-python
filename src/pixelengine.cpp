@@ -37,37 +37,12 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property_readonly("width", &RenderContext::width)
         .def_property_readonly("height", &RenderContext::height);
 
-    py::class_<PixelEngine::FilterHandle>(m, "FilterHandle");
-        //.def("supported_parameters", &PixelEngine::FilterHandle::supportedParameters);
-
     py::class_<PixelEngine> pyPixelEngine(m, "PixelEngine");
 
     py::enum_<PixelEngine::BufferType>(pyPixelEngine, "BufferType")
         .value("RGB", PixelEngine::BufferType::RGB)
         .value("RGBA", PixelEngine::BufferType::RGBA)
         .value("LUMINANCE", PixelEngine::BufferType::LUMINANCE);
-
-    py::class_<PixelEngine::CompressionParameters>(pyPixelEngine, "CompressionParameters");
-
-    py::class_<PixelEngine::WSICompressionParametersBuilder>(pyPixelEngine, "WSICompressionParametersBuilder")
-        .def("with_num_derived_levels", &PixelEngine::WSICompressionParametersBuilder::withNumDerivedLevels)
-        .def("with_block_size", &PixelEngine::WSICompressionParametersBuilder::withBlockSize)
-        .def("with_pixel_transform", &PixelEngine::WSICompressionParametersBuilder::withPixelTransform)
-        .def("with_compressor", &PixelEngine::WSICompressionParametersBuilder::withCompressor)
-        .def("with_colorspace_transform", &PixelEngine::WSICompressionParametersBuilder::withColorspaceTransform)
-        .def("with_bit_depth", &PixelEngine::WSICompressionParametersBuilder::withBitDepth)
-        .def("with_num_threads", &PixelEngine::WSICompressionParametersBuilder::withNumThreads)
-        .def("with_default_color_intensity", &PixelEngine::WSICompressionParametersBuilder::withDefaultColorIntensity)
-        //.def("with_quality_preset", &PixelEngine::WSICompressionParametersBuilder::withQualityPreset)
-        .def("with_quality", &PixelEngine::WSICompressionParametersBuilder::withQuality)
-        .def("with_origin", &PixelEngine::WSICompressionParametersBuilder::withOrigin)
-        .def("with_scale", &PixelEngine::WSICompressionParametersBuilder::withScale)
-        .def("build", &PixelEngine::WSICompressionParametersBuilder::build);
-
-    py::class_<PixelEngine::SecondaryCaptureCompressionParametersBuilder>(pyPixelEngine, "SecondaryCaptureCompressionParametersBuilder")
-        .def("with_origin", &PixelEngine::SecondaryCaptureCompressionParametersBuilder::withOrigin)
-        .def("with_scale", &PixelEngine::SecondaryCaptureCompressionParametersBuilder::withScale)
-        .def("build", &PixelEngine::SecondaryCaptureCompressionParametersBuilder::build);
 
     py::class_<PixelEngine::DataEnvelopes>(pyPixelEngine, "DataEnvelopes")
         .def("__eq__", [](PixelEngine::DataEnvelopes &self, PixelEngine::DataEnvelopes const &other)
@@ -271,7 +246,6 @@ PYBIND11_MODULE(pixelengine, m)
             "display_view", [](PixelEngine::SubImage &self)
             { return &self.displayView(); },
             py::return_value_policy::reference)
-        .def("add_view", &PixelEngine::SubImage::addView)
         .def(
             "block_size", [](PixelEngine::SubImage &self, size_t template_id)
             { return self.blockSize(template_id); },
