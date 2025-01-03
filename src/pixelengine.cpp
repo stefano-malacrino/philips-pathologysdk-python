@@ -64,7 +64,7 @@ PYBIND11_MODULE(pixelengine, m)
              { return self.id() < other.id(); })
         .def_property_readonly("ready", &PixelEngine::Region::ready)
         .def_property_readonly("range", &PixelEngine::Region::range)
-        .def("get", [](PixelEngine::Region &self, py::buffer const &buffer)
+        .def("get", [](PixelEngine::Region &self, py::buffer &buffer)
              {
             py::buffer_info info = buffer.request();
             return self.get(info.ptr, info.itemsize * info.size); })
@@ -251,7 +251,7 @@ PYBIND11_MODULE(pixelengine, m)
             { return self.blockSize(template_id); },
             py::arg("template_id") = 0UL)
         .def("block_pos", &PixelEngine::SubImage::blockPos)
-        .def("read_block", [](PixelEngine::SubImage &self, py::buffer const &buffer)
+        .def("read_block", [](PixelEngine::SubImage &self, py::buffer &buffer)
              { 
                 py::buffer_info info = buffer.request();
                 return self.readBlock(info.ptr, info.itemsize * info.size); })
