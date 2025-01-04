@@ -449,12 +449,17 @@ PYBIND11_MODULE(pixelengine, m)
             { return self.networkTimeout(); },
             [](PixelEngine &self, size_t timeout)
             { return self.networkTimeout(timeout); })
-        .def(
-            "client_certificates", [](PixelEngine &self, std::string const &cert, std::string const &key, std::string const &password)
-            { return self.clientCertificates(cert, key, password); },
-            py::arg("cert"),
-            py::arg("key") = "",
-            py::arg("password") = "")
+        .def_property(
+            "client_certificates",
+            [](PixelEngine &self)
+            { return self.clientCertificates(); },
+            [](PixelEngine &self, std::tuple<std::string, std::string, std::string> const &certs)
+            {
+                const std::string& cert = std::get<0>(certs);
+                const std::string& key = std::get<1>(certs);
+                const std::string& password = std::get<2>(certs);
+                return self.clientCertificates(cert, key, password); 
+            })
         .def_property(
             "certificates", [](PixelEngine &self)
             { return self.certificates(); },
