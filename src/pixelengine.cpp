@@ -68,7 +68,7 @@ PYBIND11_MODULE(pixelengine, m)
              {
             py::buffer_info info = buffer.request();
             return self.get(info.ptr, info.itemsize * info.size); })
-        .def("draw", &PixelEngine::Region::draw);
+        .def("draw", &PixelEngine::Region::draw, py::arg("target") = 0);
 
     py::class_<PixelEngine::Level>(pyPixelEngine, "Level")
         .def("chain_source_view", &PixelEngine::Level::chainSourceView)
@@ -441,7 +441,9 @@ PYBIND11_MODULE(pixelengine, m)
             "wait_any", [](PixelEngine &self, std::list<std::shared_ptr<PixelEngine::Region>> const &regions)
             { return self.waitAny(regions); },
             py::return_value_policy::reference)
-        .def("clear_render_target", &PixelEngine::clearRenderTarget)
+        .def("clear_render_target", &PixelEngine::clearRenderTarget,
+            py::arg("color"),
+            py::arg("target") = 0)
         .def("clear_render_cache", &PixelEngine::clearRenderCache)
         .def("clear_render_buffers", &PixelEngine::clearRenderBuffers)
         .def_property(
