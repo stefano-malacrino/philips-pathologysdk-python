@@ -278,7 +278,6 @@ PYBIND11_MODULE(pixelengine, m)
             py::arg("container_name") = "",
             py::arg("mode") = "r",
             py::arg("cache_name") = "")
-        .def("add_sub_image", &PixelEngine::ISyntaxFacade::addSubImage)
         .def_property_readonly("num_images", &PixelEngine::ISyntaxFacade::numImages)
         .def("__getitem__",
             py::overload_cast<size_t>(&PixelEngine::ISyntaxFacade::operator[]),
@@ -288,7 +287,6 @@ PYBIND11_MODULE(pixelengine, m)
             py::overload_cast<std::string const&>(&PixelEngine::ISyntaxFacade::operator[]),
             py::arg("type"),
             py::return_value_policy::reference)
-        .def("finalize_geometry_and_properties", &PixelEngine::ISyntaxFacade::finalizeGeometryAndProperties)
         .def_property_readonly("isyntax_file_version", &PixelEngine::ISyntaxFacade::iSyntaxFileVersion)
         .def_property_readonly("id", &PixelEngine::ISyntaxFacade::id)
         .def_property("barcode",
