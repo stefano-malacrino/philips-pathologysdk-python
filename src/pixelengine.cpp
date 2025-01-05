@@ -53,34 +53,39 @@ PYBIND11_MODULE(pixelengine, m)
     py::class_<PixelEngine::Region, std::shared_ptr<PixelEngine::Region>>(pyPixelEngine, "Region")
         .def("__hash__", &PixelEngine::Region::id)
         .def("__eq__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
-             { return self.id() == other.id(); })
+             { return self.id() == other.id(); }, py::arg("other"))
         .def("__ge__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
-             { return self.id() >= other.id(); })
+             { return self.id() >= other.id(); }, py::arg("other"))
         .def("__gt__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
-             { return self.id() > other.id(); })
+             { return self.id() > other.id(); }, py::arg("other"))
         .def("__le__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
-             { return self.id() <= other.id(); })
+             { return self.id() <= other.id(); }, py::arg("other"))
         .def("__lt__", [](PixelEngine::Region &self, PixelEngine::Region const &other)
-             { return self.id() < other.id(); })
+             { return self.id() < other.id(); }, py::arg("other"))
         .def_property_readonly("ready", &PixelEngine::Region::ready)
         .def_property_readonly("range", &PixelEngine::Region::range)
         .def("get", [](PixelEngine::Region &self, py::buffer &buffer)
              {
             py::buffer_info info = buffer.request();
-            return self.get(info.ptr, info.itemsize * info.size); })
+            return self.get(info.ptr, info.itemsize * info.size); },
+            py::arg("buffer"))
         .def("draw", &PixelEngine::Region::draw, py::arg("target") = 0);
 
     py::class_<PixelEngine::Level>(pyPixelEngine, "Level")
-        .def("chain_source_view", &PixelEngine::Level::chainSourceView)
-        .def("filter_width", &PixelEngine::Level::filterWidth);
+        .def("chain_source_view", &PixelEngine::Level::chainSourceView,
+            py::arg("view"), py::arg("x_shift"), py::arg("y_shift"), py::arg("level_shift"))
+        .def("filter_width", &PixelEngine::Level::filterWidth,
+            py::arg("coord"), py::arg("dimensions"), py::arg("filter_kernel_half_width"));
 
     py::class_<PixelEngine::View>(pyPixelEngine, "View")
         .def(
             "__getitem__", [](PixelEngine::View &self, size_t level)
             { return &self[level]; },
+            py::arg("level"),
             py::return_value_policy::reference)
         .def("chain_source_view", [](PixelEngine::View &self, const PixelEngine::View &view, int x_shift, int y_shift, int level_shift)
-             { return self.chainSourceView(view, x_shift, y_shift, level_shift); })
+             { return self.chainSourceView(view, x_shift, y_shift, level_shift); },
+             py::arg("view"), py::arg("x_shift"), py::arg("y_shift"), py::arg("level_shift"))
         .def(
             "request_regions", [](PixelEngine::View &self, std::vector<std::vector<size_t>> const &regions, bool enable_async_rendering, std::vector<size_t> const &background_color, PixelEngine::BufferType buffer_type)
             { return self.requestRegions(regions, enable_async_rendering, background_color, buffer_type); },
@@ -99,7 +104,8 @@ PYBIND11_MODULE(pixelengine, m)
             py::arg("buffer_type") = PixelEngine::BufferType::RGB,
             py::return_value_policy::reference)
         .def("dimension_ranges", [](PixelEngine::View &self, size_t level)
-             { return self.dimensionRanges(level); })
+             { return self.dimensionRanges(level); },
+            py::arg("level"))
         .def_property_readonly("dimension_names", [](PixelEngine::View &self)
                                { return self.dimensionNames(); })
         .def_property_readonly("dimension_units", [](PixelEngine::View &self)
@@ -115,6 +121,7 @@ PYBIND11_MODULE(pixelengine, m)
         .def(
             "data_envelopes", [](PixelEngine::View &self, size_t level)
             { return &self.dataEnvelopes(level); },
+            py::arg("level"),
             py::return_value_policy::reference)
         .def_property_readonly("bits_allocated", [](PixelEngine::View &self)
                                { return self.bitsAllocated(); })
@@ -139,9 +146,11 @@ PYBIND11_MODULE(pixelengine, m)
         .def(
             "__getitem__", [](PixelEngine::SourceView &self, size_t level)
             { return &self[level]; },
+            py::arg("level"),
             py::return_value_policy::reference)
         .def("chain_source_view", [](PixelEngine::SourceView &self, const PixelEngine::View &view, int x_shift, int y_shift, int level_shift)
-             { return self.chainSourceView(view, x_shift, y_shift, level_shift); })
+             { return self.chainSourceView(view, x_shift, y_shift, level_shift); },
+            py::arg("view"), py::arg("x_shift"), py::arg("y_shift"), py::arg("level_shift"))
         .def(
             "request_regions", [](PixelEngine::SourceView &self, std::vector<std::vector<size_t>> const &regions, bool enable_async_rendering, std::vector<size_t> const &background_color, PixelEngine::BufferType buffer_type)
             { return self.requestRegions(regions, enable_async_rendering, background_color, buffer_type); },
@@ -160,7 +169,8 @@ PYBIND11_MODULE(pixelengine, m)
             py::arg("buffer_type") = PixelEngine::BufferType::RGB,
             py::return_value_policy::reference)
         .def("dimension_ranges", [](PixelEngine::SourceView &self, size_t level)
-             { return self.dimensionRanges(level); })
+             { return self.dimensionRanges(level); },
+             py::arg("level"))
         .def_property_readonly("dimension_names", [](PixelEngine::SourceView &self)
                                { return self.dimensionNames(); })
         .def_property_readonly("dimension_units", [](PixelEngine::SourceView &self)
@@ -176,6 +186,7 @@ PYBIND11_MODULE(pixelengine, m)
         .def(
             "data_envelopes", [](PixelEngine::SourceView &self, size_t level)
             { return &self.dataEnvelopes(level); },
+            py::arg("level"),
             py::return_value_policy::reference)
         .def_property_readonly("bits_allocated", [](PixelEngine::SourceView &self)
                                { return self.bitsAllocated(); })
@@ -196,7 +207,8 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property_readonly("pixel_size", [](PixelEngine::SourceView &self)
                                { return self.pixelSize(); })
         .def("load_default_parameters", &PixelEngine::SourceView::loadDefaultParameters)
-        .def("truncation", &PixelEngine::SourceView::truncation);
+        .def("truncation", &PixelEngine::SourceView::truncation,
+        py::arg("enabled"), py::arg("rounding"), py::arg("trunc_levels"));
 
     py::class_<PixelEngine::DisplayView, PixelEngine::SourceView>(pyPixelEngine, "DisplayView")
         .def_property(
@@ -249,12 +261,13 @@ PYBIND11_MODULE(pixelengine, m)
         .def(
             "block_size", [](PixelEngine::SubImage &self, size_t template_id)
             { return self.blockSize(template_id); },
-            py::arg("template_id") = 0UL)
-        .def("block_pos", &PixelEngine::SubImage::blockPos)
+            py::arg("template_id") = 0)
+        .def("block_pos", &PixelEngine::SubImage::blockPos, py::arg("block_ind"))
         .def("read_block", [](PixelEngine::SubImage &self, py::buffer &buffer)
              { 
                 py::buffer_info info = buffer.request();
-                return self.readBlock(info.ptr, info.itemsize * info.size); })
+                return self.readBlock(info.ptr, info.itemsize * info.size); },
+            py::arg("buffer"))
         //.def("ordered_block_coordinates", &PixelEngine::SubImage::orderedBlockCoordinates)
         .def_property_readonly("image_type", &PixelEngine::SubImage::imageType)
         .def_property_readonly("pixel_transform", &PixelEngine::SubImage::pixelTransform)
@@ -328,10 +341,12 @@ PYBIND11_MODULE(pixelengine, m)
         .def(
             "__getitem__", [](PixelEngine::ISyntaxFacade &self, size_t index)
             { return &self[index]; },
+            py::arg("index"),
             py::return_value_policy::reference)
         .def(
             "__getitem__", [](PixelEngine::ISyntaxFacade &self, std::string const &type)
             { return &self[type]; },
+            py::arg("type"),
             py::return_value_policy::reference)
         .def("finalize_geometry_and_properties", &PixelEngine::ISyntaxFacade::finalizeGeometryAndProperties)
         .def_property_readonly("isyntax_file_version", &PixelEngine::ISyntaxFacade::iSyntaxFileVersion)
@@ -423,16 +438,17 @@ PYBIND11_MODULE(pixelengine, m)
         .def(
             "__getitem__", [](PixelEngine &self, std::string const &name)
             { return &self[name]; },
+            py::arg("name"),
             py::return_value_policy::reference)
         .def("containers", &PixelEngine::containers)
-        .def("container_version", &PixelEngine::containerVersion)
+        .def("container_version", &PixelEngine::containerVersion, py::arg("container"))
         .def("compressors", &PixelEngine::compressors)
         .def("pixel_transforms", &PixelEngine::pixelTransforms)
-        .def("block_sizes", &PixelEngine::blockSizes)
+        .def("block_sizes", &PixelEngine::blockSizes, py::arg("pixel_transform"))
         .def("colorspace_transforms", &PixelEngine::colorspaceTransforms)
         .def("quality_presets", &PixelEngine::qualityPresets)
         //.def("supported_filters", &PixelEngine::supportedFilters)
-        .def("wait_all", &PixelEngine::waitAll)
+        .def("wait_all", &PixelEngine::waitAll, py::arg("regions"))
         .def(
             "wait_any", [](PixelEngine &self)
             { return self.waitAny(); },
@@ -440,6 +456,7 @@ PYBIND11_MODULE(pixelengine, m)
         .def(
             "wait_any", [](PixelEngine &self, std::list<std::shared_ptr<PixelEngine::Region>> const &regions)
             { return self.waitAny(regions); },
+            py::arg("regions"),
             py::return_value_policy::reference)
         .def("clear_render_target", &PixelEngine::clearRenderTarget,
             py::arg("color"),
