@@ -243,12 +243,6 @@ PYBIND11_MODULE(pixelengine, m)
             { return self.colorGain(gain); });
 
     py::class_<PixelEngine::SubImage>(pyPixelEngine, "SubImage")
-        .def("include_input_region", &PixelEngine::SubImage::includeInputRegion)
-        .def("preallocate_pixels", &PixelEngine::SubImage::preallocatePixels)
-        /*.def("put_block", [](PixelEngine::SubImage &self, py::buffer const &buffer)
-             { 
-                py::buffer_info info = buffer.request();
-                return self.putBlock(info.ptr, info.itemsize * info.size); })*/
         .def_property_readonly("has_display_view", &PixelEngine::SubImage::hasDisplayView)
         .def_property_readonly(
             "source_view", [](PixelEngine::SubImage &self)
@@ -426,10 +420,7 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property_readonly("is_UFS", &PixelEngine::ISyntaxFacade::isUFS)
         .def_property_readonly("is_UFSb", &PixelEngine::ISyntaxFacade::isUFSb)
         .def_property_readonly("is_UVS", &PixelEngine::ISyntaxFacade::isUVS)
-        .def("close", &PixelEngine::ISyntaxFacade::close)
-        .def("abort", &PixelEngine::ISyntaxFacade::abort)
-        //.def(".remaining_pixels_to_encode", &PixelEngine::ISyntaxFacade::remainingPixelsToEncode)
-        ;
+        .def("close", &PixelEngine::ISyntaxFacade::close);
 
     pyPixelEngine.def(py::init<>())
         .def(py::init<RenderBackend &, RenderContext &>())
