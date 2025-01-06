@@ -339,7 +339,8 @@ PYBIND11_MODULE(pixelengine, m)
         .def("close", &PixelEngine::ISyntaxFacade::close);
 
     pyPixelEngine.def(py::init<>())
-        .def(py::init<RenderBackend &, RenderContext &>())
+        .def(py::init<RenderBackend &, RenderContext &>(),
+            py::arg("render_backend"), py::arg("render_context"))
         .def_property_readonly_static("version", [](py::object)
                                       { return PixelEngine::version(); })
         .def("__getitem__", &PixelEngine::operator[], py::arg("name"),
