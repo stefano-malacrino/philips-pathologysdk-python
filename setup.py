@@ -34,4 +34,14 @@ setup(
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
     python_requires=">=3.6",
+    packages=[
+        'pixelengine-stubs',
+        'softwarerenderbackend-stubs',
+        'softwarerendercontext-stubs'
+    ],
+    package_dir={
+        'pixelengine-stubs': 'stubs/pixelengine-stubs',
+        'softwarerenderbackend-stubs': 'stubs/softwarerenderbackend-stubs',
+        'softwarerendercontext-stubs': 'stubs/softwarerendercontext-stubs'
+    }
 )
