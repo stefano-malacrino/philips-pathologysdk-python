@@ -7,19 +7,19 @@ ext_modules = [
     Pybind11Extension("pixelengine",
         ["src/pixelengine.cpp"],
         language='c++',
-        cxx_std=14,
+        cxx_std=17,
         libraries=['pixelengine']
         ),
     Pybind11Extension("softwarerenderbackend",
         ["src/softwarerenderbackend.cpp"],
         language='c++',
-        cxx_std=14,
+        cxx_std=17,
         libraries=['softwarerenderbackend']
         ),
     Pybind11Extension("softwarerendercontext",
         ["src/softwarerendercontext.cpp"],
         language='c++',
-        cxx_std=14,
+        cxx_std=17,
         libraries=['softwarerendercontext']
         ),
 ]
