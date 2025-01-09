@@ -1,6 +1,22 @@
 from enum import Enum
-from typing import Annotated, BinaryIO, ClassVar, overload
-from typing_extensions import Buffer
+from os import PathLike
+from typing import ClassVar, overload
+from typing_extensions import Annotated, Buffer, Literal, Protocol
+
+class SupportsRead(Protocol):
+    def read(self, n: int | None = ..., /) -> Buffer: ...
+
+class SupportsSeek(Protocol):
+    def seek(self, offset: int, whence: int = ..., /) -> int: ...
+
+class SupportsTell(Protocol):
+    def tell(self) -> int: ...
+
+class SupportsWrite(Protocol):
+    def write(self, data: Buffer, /) -> int: ...
+
+class ReadableFileLike(SupportsRead, SupportsSeek, SupportsTell, Protocol): ...
+class WritableFileLike(ReadableFileLike, SupportsWrite, Protocol): ...
 
 class PixelEngine:
     class BufferType(Enum):
@@ -47,17 +63,25 @@ class PixelEngine:
         @overload
         def open(
             self,
-            url: str,
-            container_name: str = "",
-            mode: str = "r",
+            url: str | bytes | PathLike[str] | PathLike[bytes],
+            container_name: Literal["", "caching-ficom", "ficom"] = "",
+            mode: Literal["r", "w"] = "r",
             cache_name: str = "",
         ) -> None: ...
         @overload
         def open(
             self,
-            stream: BinaryIO,
-            container_name: str = "",
-            mode: str = "r",
+            stream: ReadableFileLike | WritableFileLike,
+            container_name: Literal["", "caching-ficom", "ficom"] = "",
+            mode: Literal["r"] = ...,
+            cache_name: str = "",
+        ) -> None: ...
+        @overload
+        def open(
+            self,
+            stream: WritableFileLike,
+            container_name: Literal["", "caching-ficom", "ficom"] = "",
+            mode: Literal["w"] = ...,
             cache_name: str = "",
         ) -> None: ...
         @property
