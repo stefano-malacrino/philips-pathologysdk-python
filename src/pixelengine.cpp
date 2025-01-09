@@ -2,6 +2,7 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>
 
 #include <PhilipsPixelEngine/pixelengine.hpp>
 #include <PhilipsPixelEngine/renderbackend.hpp>
@@ -261,7 +262,7 @@ PYBIND11_MODULE(pixelengine, m)
 
     py::class_<PixelEngine::ISyntaxFacade>(pyPixelEngine, "ISyntaxFacade")
         .def(
-            "open", [](PixelEngine::ISyntaxFacade &self, std::string const &url, std::string const &container_name, std::string const &mode, std::string const &cache_name)
+            "open", [](PixelEngine::ISyntaxFacade &self, std::filesystem::path const &url, std::string const &container_name, std::string const &mode, std::string const &cache_name)
             {
         std::ios_base::openmode open_mode = parse_isyntax_open_options(mode, container_name);
         return self.open(url, container_name, open_mode, cache_name); },
