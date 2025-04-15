@@ -64,7 +64,7 @@ class PixelEngine:
         def open(
             self,
             url: str | bytes | PathLike[str] | PathLike[bytes],
-            container_name: Literal["", "caching-ficom", "ficom"] = "",
+            container_name: Literal["", "caching-ficom", "dicom", "ficom", "legacy", "s3"] = "",
             mode: Literal["r", "w"] = "r",
             cache_name: str = "",
         ) -> None: ...
@@ -72,7 +72,7 @@ class PixelEngine:
         def open(
             self,
             stream: ReadableFileLike | WritableFileLike,
-            container_name: Literal["", "caching-ficom", "ficom"] = "",
+            container_name: Literal["", "caching-ficom", "dicom", "ficom", "legacy", "s3"] = "",
             mode: Literal["r"] = ...,
             cache_name: str = "",
         ) -> None: ...
@@ -80,7 +80,7 @@ class PixelEngine:
         def open(
             self,
             stream: WritableFileLike,
-            container_name: Literal["", "caching-ficom", "ficom"] = "",
+            container_name: Literal["", "caching-ficom", "dicom", "ficom", "legacy", "s3"] = "",
             mode: Literal["w"] = ...,
             cache_name: str = "",
         ) -> None: ...
