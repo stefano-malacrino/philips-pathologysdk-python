@@ -21,6 +21,26 @@ std::ios_base::openmode parse_isyntax_open_mode(std::string const &open_mode) {
         throw py::value_error("mode needs to be either 'r' or 'w'");
 }
 
+class FilterHandle
+{
+public:
+    FilterHandle(std::unique_ptr<PixelEngine::FilterHandle> filter_handle) {
+        this->filter_handle = std::move(filter_handle);
+    }
+    std::unique_ptr<PixelEngine::FilterHandle> &ref() {
+        return filter_handle;
+    }
+    std::string const& name() {
+        return filter_handle->name();
+    }
+    std::vector<std::string> const& supportedParameters() {
+        return filter_handle->supportedParameters();
+    }
+
+private:
+    std::unique_ptr<PixelEngine::FilterHandle> filter_handle;
+};
+
 PYBIND11_MODULE(pixelengine, m)
 {
     py::class_<RenderBackend> pyRenderBackend(m, "RenderBackend");
@@ -42,6 +62,30 @@ PYBIND11_MODULE(pixelengine, m)
         .value("RGB", PixelEngine::BufferType::RGB)
         .value("RGBA", PixelEngine::BufferType::RGBA)
         .value("LUMINANCE", PixelEngine::BufferType::LUMINANCE);
+
+    py::class_<PixelEngine::CompressionParameters, std::shared_ptr<PixelEngine::CompressionParameters>>(pyPixelEngine, "CompressionParameters");
+
+    py::class_<PixelEngine::WSICompressionParametersBuilder>(pyPixelEngine, "WSICompressionParametersBuilder")
+        .def(py::init<std::vector<size_t> const&>(), py::arg("size"))
+        .def("with_num_derived_levels", &PixelEngine::WSICompressionParametersBuilder::withNumDerivedLevels, py::arg("num_levels"))
+        .def("with_block_size", &PixelEngine::WSICompressionParametersBuilder::withBlockSize, py::arg("block_size"))
+        .def("with_pixel_transform", &PixelEngine::WSICompressionParametersBuilder::withPixelTransform, py::arg("pixel_transform"))
+        .def("with_compressor", &PixelEngine::WSICompressionParametersBuilder::withCompressor, py::arg("compressor"))
+        .def("with_colorspace_transform", &PixelEngine::WSICompressionParametersBuilder::withColorspaceTransform, py::arg("colorspace_transform"))
+        .def("with_bit_depth", &PixelEngine::WSICompressionParametersBuilder::withBitDepth, py::arg("bit_depth"))
+        .def("with_num_threads", &PixelEngine::WSICompressionParametersBuilder::withNumThreads, py::arg("num_threads"))
+        .def("with_default_color_intensity", &PixelEngine::WSICompressionParametersBuilder::withDefaultColorIntensity, py::arg("default_color_intensity"))
+        .def("with_quality_preset", &PixelEngine::WSICompressionParametersBuilder::withQualityPreset, py::arg("quality"))
+        .def("with_quality", &PixelEngine::WSICompressionParametersBuilder::withQuality, py::arg("quality"))
+        .def("with_origin", &PixelEngine::WSICompressionParametersBuilder::withOrigin, py::arg("origin"))
+        .def("with_scale", &PixelEngine::WSICompressionParametersBuilder::withScale, py::arg("scale"))
+        .def("build", &PixelEngine::WSICompressionParametersBuilder::build);
+    
+    py::class_<PixelEngine::SecondaryCaptureCompressionParametersBuilder>(pyPixelEngine, "SecondaryCaptureCompressionParametersBuilder")
+        .def(py::init<std::string const&, uint32_t, uint32_t>(), py::arg("image_type"), py::arg("width"), py::arg("height"))
+        .def("with_origin", &PixelEngine::SecondaryCaptureCompressionParametersBuilder::withOrigin, py::arg("origin"))
+        .def("with_scale", &PixelEngine::SecondaryCaptureCompressionParametersBuilder::withScale, py::arg("scale"))
+        .def("build", &PixelEngine::SecondaryCaptureCompressionParametersBuilder::build);
 
     py::class_<PixelEngine::DataEnvelopes>(pyPixelEngine, "DataEnvelopes")
         .def("__eq__", &PixelEngine::DataEnvelopes::operator==, py::arg("other"))
@@ -69,19 +113,24 @@ PYBIND11_MODULE(pixelengine, m)
             py::arg("buffer"))
         .def("draw", &PixelEngine::Region::draw, py::arg("target") = 0);
 
+    py::class_<FilterHandle>(pyPixelEngine, "FilterHandle")
+        .def("name", &FilterHandle::name)
+        .def("supported_parameters", &FilterHandle::supportedParameters);
+
     py::class_<PixelEngine::Level>(pyPixelEngine, "Level")
         .def("chain_source_view", &PixelEngine::Level::chainSourceView,
             py::arg("view"), py::arg("x_shift"), py::arg("y_shift"), py::arg("level_shift"))
         .def("filter_width", &PixelEngine::Level::filterWidth,
             py::arg("coord"), py::arg("dimensions"), py::arg("filter_kernel_half_width"));
 
-    py::class_<PixelEngine::View>(pyPixelEngine, "View")
+    py::class_<PixelEngine::View>(pyPixelEngine, "View", py::multiple_inheritance())
         .def("__getitem__",
             &PixelEngine::View::operator[], py::arg("level"),
             py::return_value_policy::reference)
         .def("chain_source_view",
             &PixelEngine::View::chainSourceView,
              py::arg("view"), py::arg("x_shift"), py::arg("y_shift"), py::arg("level_shift"))
+        .def("add_user_view", &PixelEngine::View::addChainedView, py::return_value_policy::reference)
         .def("request_regions",
             py::overload_cast<std::vector<std::vector<size_t>> const&, bool, std::vector<size_t> const&, PixelEngine::BufferType>(&PixelEngine::View::requestRegions),
             py::arg("regions"),
@@ -125,6 +174,8 @@ PYBIND11_MODULE(pixelengine, m)
         .def("chain_source_view", [](PixelEngine::SourceView &self, const PixelEngine::View &view, int x_shift, int y_shift, int level_shift)
              { return self.chainSourceView(view, x_shift, y_shift, level_shift); },
             py::arg("view"), py::arg("x_shift"), py::arg("y_shift"), py::arg("level_shift"))
+        .def("add_user_view", [](PixelEngine::SourceView &self)
+             { return &self.addChainedView(); }, py::return_value_policy::reference)
         .def(
             "request_regions", [](PixelEngine::SourceView &self, std::vector<std::vector<size_t>> const &regions, bool enable_async_rendering, std::vector<size_t> const &background_color, PixelEngine::BufferType buffer_type)
             { return self.requestRegions(regions, enable_async_rendering, background_color, buffer_type); },
@@ -204,7 +255,73 @@ PYBIND11_MODULE(pixelengine, m)
             py::overload_cast<>(&PixelEngine::DisplayView::colorGain, py::const_),
             py::overload_cast<double>(&PixelEngine::DisplayView::colorGain));
 
+    py::class_<PixelEngine::UserView, PixelEngine::View>(pyPixelEngine, "UserView")
+        .def("add_filter", [](PixelEngine::UserView &self, std::string const& filter_name){
+                return FilterHandle(self.addFilter(filter_name));
+            }, py::arg("filter_name"), py::return_value_policy::take_ownership)
+        .def("filter_parameter_double", [](PixelEngine::UserView &self, FilterHandle& filter, std::string const& name, double value){
+                std::unique_ptr<PixelEngine::FilterHandle> &filter_handle = filter.ref();
+                return self.filterParameterDouble(filter_handle, name, value);
+            }, py::arg("filter"), py::arg("name"), py::arg("value"))
+        .def("filter_parameter_matrix3x3", [](PixelEngine::UserView &self, FilterHandle& filter, std::string const& name, std::array<double, 9> const& value){
+                std::unique_ptr<PixelEngine::FilterHandle> &filter_handle = filter.ref();
+                return self.filterParameterMatrix3x3(filter_handle, name, value);
+            }, py::arg("filter"), py::arg("name"), py::arg("value"));
+
+    py::class_<PixelEngine::DimensionRange>(pyPixelEngine, "DimensionRange")
+        .def(py::init<uint32_t, uint32_t, uint32_t>(),
+            py::arg("begin"), py::arg("increment"),  py::arg("end"))
+        .def_readonly("begin", &PixelEngine::DimensionRange::begin)
+        .def_readonly("increment", &PixelEngine::DimensionRange::increment)
+        .def_readonly("end", &PixelEngine::DimensionRange::end);
+    
+    py::class_<PixelEngine::BlockHeaderTemplate>(pyPixelEngine, "BlockHeaderTemplate")
+        .def_readonly("bits_allocated", &PixelEngine::BlockHeaderTemplate::bitsAllocated)
+        .def_readonly("bits_stored", &PixelEngine::BlockHeaderTemplate::bitsStored)
+        .def_readonly("high_bit", &PixelEngine::BlockHeaderTemplate::highBit)
+        .def_readonly("samples_per_pixel", &PixelEngine::BlockHeaderTemplate::samplesPerPixel)
+        .def_readonly("compressor_id", &PixelEngine::BlockHeaderTemplate::compressorId)
+        .def_readonly("dimensions_in_block", &PixelEngine::BlockHeaderTemplate::dimensionsInBlock)
+        .def_readonly("dimension_ranges", &PixelEngine::BlockHeaderTemplate::dimensionRanges);
+
+    py::class_<PixelEngine::BlockHeader>(pyPixelEngine, "BlockHeader")
+        .def_readonly("coordinate", &PixelEngine::BlockHeader::coordinate)
+        .def_readonly("template_id", &PixelEngine::BlockHeader::templateId)
+        .def_readonly("offset", &PixelEngine::BlockHeader::offset)
+        .def_readonly("size", &PixelEngine::BlockHeader::size);
+
+    py::class_<PixelEngine::ClusterBlockHeader>(pyPixelEngine, "ClusterBlockHeader")
+        .def_readonly("coordinate", &PixelEngine::ClusterBlockHeader::coordinate)
+        .def_readonly("template_id", &PixelEngine::ClusterBlockHeader::templateId);
+
+    py::class_<PixelEngine::ClusterHeaderTemplate>(pyPixelEngine, "ClusterHeaderTemplate")
+        .def_readonly("dimensions_in_cluster", &PixelEngine::ClusterHeaderTemplate::dimensionsInCluster)
+        .def_readonly("block_headers", &PixelEngine::ClusterHeaderTemplate::blockHeaders)
+        .def_readonly("dimension_ranges", &PixelEngine::ClusterHeaderTemplate::dimensionRanges);
+
+    py::class_<PixelEngine::ClusterHeader>(pyPixelEngine, "ClusterHeader")
+        .def_readonly("coordinate", &PixelEngine::ClusterHeader::coordinate)
+        .def_readonly("block_offsets", &PixelEngine::ClusterHeader::blockOffsets)
+        .def_readonly("block_sizes", &PixelEngine::ClusterHeader::blockSizes)
+        .def_readonly("template_id", &PixelEngine::ClusterHeader::templateId)
+        .def_readonly("offset", &PixelEngine::ClusterHeader::offset)
+        .def_readonly("size", &PixelEngine::ClusterHeader::size);
+
+    py::class_<PixelEngine::SubImageHeader>(pyPixelEngine, "SubImageHeader")
+        .def_readonly("cluster_header_templates", &PixelEngine::SubImageHeader::clusterHeaderTemplates)
+        .def_readonly("cluster_sequence", &PixelEngine::SubImageHeader::clusterSequence)
+        .def_readonly("block_header_templates", &PixelEngine::SubImageHeader::blockHeaderTemplates)
+        .def_readonly("block_headers", &PixelEngine::SubImageHeader::blockHeaders)
+        .def_readonly("cluster_headers", &PixelEngine::SubImageHeader::clusterHeaders);
+        
     py::class_<PixelEngine::SubImage>(pyPixelEngine, "SubImage")
+        .def("include_input_region", &PixelEngine::SubImage::includeInputRegion, py::arg("pos"), py::arg("size"), py::arg("level"))
+        .def("preallocate_pixels", &PixelEngine::SubImage::preallocatePixels, py::arg("pos"), py::arg("size"), py::arg("level"))
+        .def("put_block", [](PixelEngine::SubImage &self, py::buffer &buffer)
+             { 
+                py::buffer_info info = buffer.request();
+                return self.putBlock(info.ptr, info.itemsize * info.size); },
+            py::arg("buffer"))
         .def_property_readonly("has_display_view", &PixelEngine::SubImage::hasDisplayView)
         .def_property_readonly("source_view",
             py::overload_cast<>(&PixelEngine::SubImage::sourceView),
@@ -212,6 +329,7 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property_readonly("display_view",
             py::overload_cast<>(&PixelEngine::SubImage::displayView),
             py::return_value_policy::reference)
+        .def("add_view", &PixelEngine::SubImage::addView, py::return_value_policy::reference)
         .def("block_size", &PixelEngine::SubImage::blockSize, py::arg("template_id") = 0)
         .def("block_pos", &PixelEngine::SubImage::blockPos, py::arg("block_ind"))
         .def("read_block", [](PixelEngine::SubImage &self, py::buffer &buffer)
@@ -219,10 +337,10 @@ PYBIND11_MODULE(pixelengine, m)
                 py::buffer_info info = buffer.request();
                 return self.readBlock(info.ptr, info.itemsize * info.size); },
             py::arg("buffer"))
-        //.def("ordered_block_coordinates", &PixelEngine::SubImage::orderedBlockCoordinates)
+        .def("ordered_block_coordinates", &PixelEngine::SubImage::orderedBlockCoordinates)
         .def_property_readonly("image_type", &PixelEngine::SubImage::imageType)
         .def_property_readonly("pixel_transform", &PixelEngine::SubImage::pixelTransform)
-        //.def_property_readonly("quality_preset", &PixelEngine::SubImage::qualityPreset)
+        .def_property_readonly("quality_preset", &PixelEngine::SubImage::qualityPreset)
         .def_property_readonly("quality", &PixelEngine::SubImage::quality)
         .def_property_readonly("compressor", &PixelEngine::SubImage::compressor)
         .def_property_readonly("colorspace_transform", &PixelEngine::SubImage::colorspaceTransform)
@@ -230,7 +348,7 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property("icc_profile",
             py::overload_cast<>(&PixelEngine::SubImage::iccProfile, py::const_),
             py::overload_cast<std::string const&>(&PixelEngine::SubImage::iccProfile))
-        //.def_property_readonly("icc_matrix", &PixelEngine::SubImage::iccMatrix)
+        .def_property_readonly("icc_matrix", &PixelEngine::SubImage::iccMatrix)
         .def_property(
             "image_data", [](PixelEngine::SubImage &self)
             {
@@ -253,10 +371,9 @@ PYBIND11_MODULE(pixelengine, m)
         .def_property("color_linearity",
             py::overload_cast<>(&PixelEngine::SubImage::colorLinearity, py::const_),
             py::overload_cast<std::string const&>(&PixelEngine::SubImage::colorLinearity))
-        //.def("header", &PixelEngine::SubImage::header)
-        //.def("block_coordinate", &PixelEngine::SubImage::blockCoordinate)
-        //.def("block_index", &PixelEngine::SubImage::blockIndex)
-        ;
+        .def("header", &PixelEngine::SubImage::header)
+        .def("block_coordinate", &PixelEngine::SubImage::blockCoordinate, py::arg("block_index"))
+        .def("block_index", &PixelEngine::SubImage::blockIndex, py::arg("block_coordinate"));
 
     py::class_<PixelEngine::ISyntaxFacade>(pyPixelEngine, "ISyntaxFacade")
         .def(
@@ -277,6 +394,7 @@ PYBIND11_MODULE(pixelengine, m)
             py::arg("container_name") = "",
             py::arg("mode") = "r",
             py::arg("cache_name") = "")
+        .def("add_sub_image", &PixelEngine::ISyntaxFacade::addSubImage)
         .def_property_readonly("num_images", &PixelEngine::ISyntaxFacade::numImages)
         .def("__getitem__",
             py::overload_cast<size_t>(&PixelEngine::ISyntaxFacade::operator[]),
@@ -331,7 +449,7 @@ PYBIND11_MODULE(pixelengine, m)
             py::overload_cast<>(&PixelEngine::ISyntaxFacade::timeOfLastCalibration, py::const_),
             py::overload_cast<std::vector<std::string> const&>(&PixelEngine::ISyntaxFacade::timeOfLastCalibration))
         .def_property_readonly("is_philips", &PixelEngine::ISyntaxFacade::isPhilips)
-        //.def_property_readonly("is_hamamatsu", &PixelEngine::ISyntaxFacade::isHamamatsu)
+        .def_property_readonly("is_hamamatsu", &PixelEngine::ISyntaxFacade::isHamamatsu)
         .def_property_readonly("is_UFS", &PixelEngine::ISyntaxFacade::isUFS)
         .def_property_readonly("is_UFSb", &PixelEngine::ISyntaxFacade::isUFSb)
         .def_property_readonly("is_UVS", &PixelEngine::ISyntaxFacade::isUVS)
@@ -351,7 +469,7 @@ PYBIND11_MODULE(pixelengine, m)
         .def("block_sizes", &PixelEngine::blockSizes, py::arg("pixel_transform"))
         .def("colorspace_transforms", &PixelEngine::colorspaceTransforms)
         .def("quality_presets", &PixelEngine::qualityPresets)
-        //.def("supported_filters", &PixelEngine::supportedFilters)
+        .def("supported_filters", &PixelEngine::supportedFilters)
         .def("wait_all", &PixelEngine::waitAll, py::arg("regions"))
         .def("wait_any",
             py::overload_cast<>(&PixelEngine::waitAny),
@@ -372,9 +490,7 @@ PYBIND11_MODULE(pixelengine, m)
             py::overload_cast<>(&PixelEngine::clientCertificates, py::const_),
             [](PixelEngine &self, std::tuple<std::string, std::string, std::string> const &certs)
             {
-                const std::string& cert = std::get<0>(certs);
-                const std::string& key = std::get<1>(certs);
-                const std::string& password = std::get<2>(certs);
+                auto const& [cert, key, password] = certs;
                 return self.clientCertificates(cert, key, password); 
             })
         .def_property("certificates",
